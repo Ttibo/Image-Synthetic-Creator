@@ -7,6 +7,142 @@ from PIL import Image
 import imutils
 from skimage.transform import PiecewiseAffineTransform, warp
 from skimage import data
+import random
+import copy
+
+
+def rotate_points(points):
+    # Rotation aléatoire des points
+    rotation_index = random.choice([0, 1, 2, 3])
+    four_points_rotated = points[rotation_index:] + points[:rotation_index]
+    
+    return four_points_rotated
+
+def random_rotation_homography(theta_range=(-np.pi/4, np.pi/4), width=640, height=480):
+    """
+    Génère aléatoirement une homographie représentant une rotation.
+
+    Args:
+        theta_range (tuple): Plage de valeurs pour l'angle de rotation en radians.
+        width (int): Largeur de l'image.
+        height (int): Hauteur de l'image.
+
+    Returns:
+        numpy.ndarray: Matrice de l'homographie représentant la rotation.
+    """
+    # Générer un angle de rotation aléatoire dans la plage spécifiée
+    theta = np.random.uniform(theta_range[0], theta_range[1])
+
+    # Calcul des composantes de l'homographie
+    cos_theta = np.cos(theta)
+    sin_theta = np.sin(theta)
+
+    # Matrice d'homographie pour une rotation
+    homography = np.array([
+        [cos_theta, -sin_theta, 0],
+        [sin_theta, cos_theta, 0],
+        [0, 0, 1]
+    ])
+
+    return homography
+
+def apply_homography_to_points(points, homography):
+    """
+    Applique une homographie à une liste de points.
+
+    Args:
+        points (numpy.ndarray): Liste de points sous forme de tableau NumPy de dimensions (n, 2),
+                                où n est le nombre de points et chaque ligne contient les coordonnées (x, y) d'un point.
+        homography (numpy.ndarray): Matrice d'homographie 3x3.
+
+    Returns:
+        numpy.ndarray: Liste de points transformés après l'application de l'homographie.
+    """
+    # Ajouter une colonne de 1 pour chaque point pour rendre les coordonnées homogènes
+    points_homogeneous = np.hstack([points, np.ones((len(points), 1))])
+
+    # Appliquer l'homographie à tous les points en une seule opération
+    transformed_points_homogeneous = np.dot(homography, points_homogeneous.T).T
+
+    # Normaliser les coordonnées homogènes en coordonnées cartésiennes
+    transformed_points = transformed_points_homogeneous[:, :2] / transformed_points_homogeneous[:, 2:]
+
+    return transformed_points
+    
+def rotate_points_around_center(points, pivot, angle):
+    # Conversion de l'angle en cos et sin
+    cos_theta = np.cos(angle)
+    sin_theta = np.sin(angle)
+
+    # Matrice de rotation
+    rotation_matrix = np.array([[cos_theta, -sin_theta],
+                                [sin_theta, cos_theta]])
+
+    # Pour chaque point, appliquer la rotation autour du pivot
+    rotated_points = []
+    for point in points:
+        # Translation pour faire tourner le point autour de l'origine
+        translated_point = point - pivot
+        # Rotation du point
+        rotated_point = np.dot(rotation_matrix, translated_point)
+        # Translation pour ramener le point à sa position d'origine
+        rotated_point += pivot
+        rotated_points.append(rotated_point)
+
+    return np.array(rotated_points)
+
+def zoom_points_around_center(points, factor):
+    # Calcul du barycentre des points
+    barycenter = [sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points)]
+    
+    # Déplacement des points vers ou depuis le barycentre
+    moved_points = []
+    for point in points:
+        moved_x = point[0] + factor * (barycenter[0] - point[0])
+        moved_y = point[1] + factor * (barycenter[1] - point[1])
+        moved_points.append((moved_x, moved_y))
+    
+    return moved_points
+
+
+
+
+def perspective_transform(image):
+    # Détermination des points de base
+    center_x, center_y = image.shape[1] // 2, image.shape[0] // 2
+    min_side_length = min(image.shape[1], image.shape[0]) // 3
+    half_min_side_length = min_side_length / 2
+    gap_x = center_x - half_min_side_length
+    gap_y = center_y - half_min_side_length
+    
+    top_point = (gap_x, gap_y)
+    left_point = (gap_x + min_side_length, gap_y)
+    bottom_point = (gap_x + min_side_length, gap_y + min_side_length)
+    right_point = (gap_x, gap_y + min_side_length)
+    
+    four_points_base = [top_point, left_point, bottom_point, right_point]
+
+    perturbed_four_points = rotate_points_around_center(four_points_base , np.asarray([center_x , center_y]) , random.randint(-180 , 180))
+    
+    # Génération de points perturbés pour la perspective
+    for point in perturbed_four_points:
+        point = [point[0] + random.randint(-half_min_side_length // 2, half_min_side_length // 2),point[1] + random.randint(-half_min_side_length // 2, half_min_side_length // 2)]
+        
+
+    # perturbed_four_points = zoom_points_around_center(perturbed_four_points , random.uniform(0.3 , 0.5))
+    
+    return cv2.getPerspectiveTransform(np.float32(four_points_base), np.float32(perturbed_four_points))
+
+def apply_perspective_transform(img, transform_):
+    # Application de la transformation sur l'image et le masque
+    warped_image = cv2.warpPerspective(img, transform_, (img.shape[1], img.shape[0]))
+    return warped_image
+
+
+
+
+
+
 
 
 
@@ -121,8 +257,6 @@ def add_background(img , mask , back):
 
     return np.asarray(Image.composite(img_, back_, mask_))
 
-
-
 def normalize(center_ , centerS , shapeS, reshapeS):
     gh , gw = center_[0] - centerS[0] , center_[1] - centerS[1]
     cp_ = [(shapeS[0] // 2) + gh , (shapeS[1] // 2) + gw ]
@@ -141,8 +275,6 @@ def denormalize(center_ , centerD , shapeD, reshapeD):
     center_[1] += gh_
     return center_
 
-
-    
 def denormalize_homography(h,pcenter,pshape,preshape,wcenter,wshape,wreshape , img):
     
     # define borders
@@ -173,8 +305,3 @@ def denormalize_homography(h,pcenter,pshape,preshape,wcenter,wshape,wreshape , i
     
     return h_
     
-    
-    plt.figure()
-    plt.imshow(rr_)
-    
-    return h_

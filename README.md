@@ -37,6 +37,13 @@ python main.py --images --background --numbers --output
 - `output_images/`: Directory where synthetic images will be saved.
 - `output_data/`: Directory where data associated with synthetic images will be saved.
 
+## Examples
+| Image de Référence | Étape 1: Perspective Transformation | Étape 2: Mesh Deformation | Étape 3: Autres Transformations (si applicables) |
+| --- | --- | --- | --- |
+| ![Image](examples/example_1/image.jpeg) | ![mesh](examples/example_1/meshed_image_1.jpeg) | ![perturbed mesh](examples/example_1/meshed_image_2.jpeg) | ![final](examples/example_1/final.jpeg) |
+| ![Image](examples/example_2/image.jpeg) | ![mesh](examples/example_2/meshed_image_1.jpeg) | ![perturbed mesh](examples/example_2/meshed_image_2.jpeg) | ![final](examples/example_2/final.jpeg) |
+
+
 ## Contributions
 
 Contributions are welcome! Feel free to open an issue to discuss features you would like to add or submit a pull request.

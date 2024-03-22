@@ -2,7 +2,11 @@ import os
 import cv2
 import argparse
 import random
+import json
 from src.processors import *
+import matplotlib.pyplot as plt
+from skimage import transform
+
 
 if __name__ == "__main__":
 
@@ -10,62 +14,56 @@ if __name__ == "__main__":
     parser.add_argument('--background', type=str , nargs='?' , help='Path background' , default="/Users/thibaultlelong/Documents/Dataset/IMAGES/")
     parser.add_argument('--image', type=str, nargs='?', help='Path images' , default="/Users/thibaultlelong/Documents/Dataset/DOCUMENTS/")
     parser.add_argument('--output', type=str, nargs='?', help='Path output' , default="/Users/thibaultlelong/Documents/Dataset/SyntheticDataset/")
-    parser.add_argument('--numbers', type=str, nargs='?', help='numbers synthetic views' , default=4 )
+    parser.add_argument('--numbers', type=str, nargs='?', help='numbers synthetic views' , default=20 )
     parser.add_argument('--dimension' , type=int , nargs='?' , help='dimension max image' , default=640)
 
     args = parser.parse_args()
 
     print(args)
 
-
-    # get images and background files
     images_ =  get_files(args.image)
     background_ =  get_files(args.background)
+    create_folder(args.output)
 
     print("images : {} , background {}".format(len(images_) , len(background_)))
 
+    for i in range(len(images_)):
+        img_ = resizer(cv2.imread(images_[i]) , max_dimension = args.dimension)
 
-    for i in range(4):
-        # open image and resize and creat mask
-        img = resizer(cv2.imread(images_[i]) , max_dimension = args.dimension)
-        back = resize_to_fit(cv2.imread(background_[i]) , img)
-        mask = np.ones((img.shape[0] , img.shape[1]))
+        create_folder(args.output + "image_" + str(i))
+        create_folder(args.output + "image_" + str(i) + "/images/")
+        cv2.imwrite(args.output + "image_" + str(i) + "/image.jpeg" , img_)
 
+        mesh_rows , mesh_cols = 10 , 10
 
+        for j in range(args.numbers):
+            create_folder(args.output + "image_" + str(i) + "/images/image_" + str(j))
 
+            img = copy.deepcopy(img_)
+            back = resize_to_fit(cv2.imread(background_[random.randint(0 , len(background_))]) , img)
+            mask = np.ones((img.shape[0] , img.shape[1] , 1))*255
 
+            mesh_points = create_mesh(img.copy(), mesh_rows, mesh_cols)
+            transform_matrix = perspective_transform(img)
 
-        # Paramètres de la maille
-        mesh_rows = 10  # Nombre de lignes dans la maille
-        mesh_cols = 5  # Nombre de colonnes dans la maille
+            img = apply_perspective_transform(img, transform_matrix)
+            mask = apply_perspective_transform(mask, transform_matrix)
+            perturbed_mesh_points = apply_homography_to_points(mesh_points , transform_matrix)
 
-        # Créer la maille sur l'image
-        mesh_points = create_mesh(img.copy(), mesh_rows, mesh_cols)
-        meshed_image = display_mesh(img , mesh_points)
-        cv2.imshow('meshed_image' , meshed_image )
+            img , perturbed_mesh_points , mask = distort_mesh_image(img , perturbed_mesh_points, mask)
 
-        # # # Perturber la maille
-        disturbed_mesh_points = distort_mesh(mesh_points, intensity=10)
-        disturbed_mesh_points_image = display_mesh(img , disturbed_mesh_points )
-        cv2.imshow('disturbed_mesh_points_image' , disturbed_mesh_points_image )
+            cv2.imwrite(args.output + "image_" + str(i) + "/images/image_" + str(j) + "/image.jpeg" , img)
+            cv2.imwrite(args.output + "image_" + str(i) + "/images/image_" + str(j) + "/mask.jpeg" , mask)
 
-        # # Déformer l'image en utilisant la maille perturbée
-        deformed_image = apply_mesh_to_image(img, mesh_points , disturbed_mesh_points)
-        cv2.imshow('deformed_image' , deformed_image)
+            final_ = add_background(img, mask, back)
 
-
-        # Générer aléatoirement une homographie
-        transform_matrix = perspective_transform(deformed_image)
-        transformed_image = apply_perspective_transform(deformed_image, transform_matrix)
-
-        # Afficher l'image transformée
-        cv2.imshow("Transformed Image", transformed_image)
+            cv2.imwrite(args.output + "image_" + str(i) + "/images/image_" + str(j) + "/final.jpeg" , final_)
 
 
+            with open(args.output + "image_" + str(i) + "/images/image_" + str(j) + "/data.json", 'w') as json_file:
+                json.dump({
+                    'h' : transform_matrix.tolist(),
+                    'mesh' : mesh_points.tolist(),
+                    'perturbed_mesh' : perturbed_mesh_points.tolist(),
 
-        cv2.waitKey(0)  
-        # cv2.destroyAllWindows()
-
-
-
-
+                }, json_file)

@@ -42,12 +42,8 @@ python main.py --images --background --numbers --output
         - `final.jpeg` : Image synthetic
         - `image.jpeg` : Image synthetic without background
         - `mask.jpeg` : Image mask
-    .
-    .
-    .
-    .
-    
-    - `image_N/`: Directory where synthetic image and data will be saved.
+
+      - `image_N/`: Directory where synthetic image and data will be saved.
         - `data.json` : Data
         - `final.jpeg` : Image synthetic
         - `image.jpeg` : Image synthetic without background

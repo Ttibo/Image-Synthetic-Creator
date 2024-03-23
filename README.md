@@ -9,11 +9,13 @@ This repository contains a tool for creating synthetic data using a reference im
 - **Data Saving**: For each generated image, the program saves a folder containing:
   - The initial reference image.
   - A folder containing all the generated synthetic images.
+    - Image final
+    - Image without background
+    - Image Mask 
   - Associated data for each synthetic image, including:
-    - Homography normalized.
+    - Homography.
     - Initial mesh.
     - Projected image mesh.
-    - Mask image.
 
 ## Usage
 
@@ -29,13 +31,17 @@ pip install -r requirements.txt
 python main.py --images --background --numbers --output
 ```
 
-
 ## Folder Structure
 
 - `data/`: Directory containing input and output data.
-- `input_images/`: Directory containing reference images.
-- `output_images/`: Directory where synthetic images will be saved.
-- `output_data/`: Directory where data associated with synthetic images will be saved.
+  - `image_N/`: Directory containing reference images.
+    - `image.jpeg` : Image reference
+    - `images/`: Directory where synthetic images will be saved.
+      - `image_N/`: Directory where synthetic image and data will be saved.
+      - `data.json` : Data
+      - `final.jpeg` : Image synthetic
+      - `image.jpeg` : Image synthetic without background
+      - `mask.jpeg` : Image mask
 
 ## Examples
 | Image de Référence | Étape 1: Perspective Transformation | Étape 2: Mesh Deformation | Étape 3: Autres Transformations (si applicables) |

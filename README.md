@@ -37,11 +37,21 @@ python main.py --images --background --numbers --output
   - `image_N/`: Directory containing reference images.
     - `image.jpeg` : Image reference
     - `images/`: Directory where synthetic images will be saved.
-      - `image_N/`: Directory where synthetic image and data will be saved.
-      - `data.json` : Data
-      - `final.jpeg` : Image synthetic
-      - `image.jpeg` : Image synthetic without background
-      - `mask.jpeg` : Image mask
+      - `image_0/`: Directory where synthetic image and data will be saved.
+        - `data.json` : Data
+        - `final.jpeg` : Image synthetic
+        - `image.jpeg` : Image synthetic without background
+        - `mask.jpeg` : Image mask
+    .
+    .
+    .
+    .
+    
+    - `image_N/`: Directory where synthetic image and data will be saved.
+        - `data.json` : Data
+        - `final.jpeg` : Image synthetic
+        - `image.jpeg` : Image synthetic without background
+        - `mask.jpeg` : Image mask
 
 ## Examples
 | Image de Référence | Étape 1: Perspective Transformation | Étape 2: Mesh Deformation | Étape 3: Autres Transformations (si applicables) |

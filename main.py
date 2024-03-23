@@ -11,9 +11,9 @@ from skimage import transform
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Dataset Creator')
-    parser.add_argument('--background', type=str , nargs='?' , help='Path background' , default="/Users/thibaultlelong/Documents/Dataset/IMAGES/")
-    parser.add_argument('--image', type=str, nargs='?', help='Path images' , default="/Users/thibaultlelong/Documents/Dataset/DOCUMENTS/")
-    parser.add_argument('--output', type=str, nargs='?', help='Path output' , default="/Users/thibaultlelong/Documents/Dataset/SyntheticDataset/")
+    parser.add_argument('--background', type=str , nargs='?' , help='Path background' )
+    parser.add_argument('--image', type=str, nargs='?', help='Path images' )
+    parser.add_argument('--output', type=str, nargs='?', help='Path output' )
     parser.add_argument('--numbers', type=str, nargs='?', help='numbers synthetic views' , default=20 )
     parser.add_argument('--dimension' , type=int , nargs='?' , help='dimension max image' , default=640)
 
